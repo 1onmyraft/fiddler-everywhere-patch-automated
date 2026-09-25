@@ -474,19 +474,42 @@ jobs:
             Write-Host "index.js (from server) not found"
           }
 
-      - name: Set user credentials
+           - name: Set user credentials
         run: |
           $source_json = "FE/resources/app/out/file/identity.getfiddler.com/oauth/token.json"
-          $main_content = Get-Content -Path $source_json -Raw | ConvertFrom-Json
-
+          $json_dir = Split-Path -Path $source_json
+          
+          if (-Not (Test-Path $json_dir)) {
+            Write-Host "Creating directory: $json_dir"
+            New-Item -ItemType Directory -Path $json_dir -Force | Out-Null
+          }
+          
+          if (Test-Path $source_json) {
+            Write-Host "Token.json found, updating credentials..."
+            $main_content = Get-Content -Path $source_json -Raw | ConvertFrom-Json
+          } else {
+            Write-Host "Token.json not found, creating new one with provided credentials..."
+            $main_content = @{
+              user_info = @{
+                email = $env:PATCH_USER_EMAIL
+                firstName = $env:PATCH_USER_FNAME
+                lastName = $env:PATCH_USER_LNAME
+                country = $env:PATCH_USER_COUNTRYCODE
+                identities = @(@{
+                  providerName = $env:PATCH_USER_PROVIDER
+                })
+              }
+            }
+          }
+          
           $main_content.user_info.email = $env:PATCH_USER_EMAIL
           $main_content.user_info.firstName = $env:PATCH_USER_FNAME
           $main_content.user_info.lastName = $env:PATCH_USER_LNAME
           $main_content.user_info.country = $env:PATCH_USER_COUNTRYCODE
           $main_content.user_info.identities[0].providerName = $env:PATCH_USER_PROVIDER
-
+          
           $main_content | ConvertTo-Json -Depth 5 | Set-Content -Path $source_json
-
+          Write-Host "User credentials set successfully"
       - name: Patch main.js to main.original.js
         run: |
           $source_main = "FE/resources/app/out/main.js"
