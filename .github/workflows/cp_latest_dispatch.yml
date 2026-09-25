@@ -474,7 +474,7 @@ jobs:
             Write-Host "index.js (from server) not found"
           }
 
-           - name: Set user credentials
+      - name: Set user credentials
         run: |
           $source_json = "FE/resources/app/out/file/identity.getfiddler.com/oauth/token.json"
           $json_dir = Split-Path -Path $source_json
